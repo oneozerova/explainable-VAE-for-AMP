@@ -1,4 +1,21 @@
-.idea
-.venv
-__pycache__
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
 .DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Model artifacts
+models/*.pt
+models/*.pkl
+
+# Claude
+.claude/
