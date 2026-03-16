@@ -13,9 +13,5 @@ __pycache__/
 .idea/
 .vscode/
 
-# Model artifacts
-models/*.pt
-models/*.pkl
-
 # Claude
 .claude/
