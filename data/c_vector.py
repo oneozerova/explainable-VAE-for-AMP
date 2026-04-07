@@ -8,10 +8,10 @@ def save_df(out_path, df):
 
 project_root = Path(__file__).resolve().parents[1]
 
-data_path = project_root / "Data" / "processed" / "data.csv"
-anticancer_path = project_root / "Data" / "processed" / "anticancer.csv"
-antiparasitic_path = project_root / "Data" / "processed" / "antiparasitic.csv"
-viral_path = project_root / "Data" / "processed" / "viral.csv"
+data_path = project_root / "data" / "preprocessed" / "data.csv"
+anticancer_path = project_root / "data" / "preprocessed" / "anticancer.csv"
+antiparasitic_path = project_root / "data" / "preprocessed" / "antiparasitic.csv"
+viral_path = project_root / "data" / "preprocessed" / "viral.csv"
 
 # data
 data_df = pd.read_csv(data_path)
@@ -26,21 +26,45 @@ for dataset in datasets_names:
             dataset["Activity"].fillna("").astype(str)
     )
 
-    m_gram_pos = text.str.contains(r"gram\+", case=False, regex=True, na=False)
-    m_gram_neg = text.str.contains(r"gram-", case=False, regex=True, na=False)
+    m_gram_pos = text.str.contains(
+        r"(gram\+|gram positive|gram[- ]?[+pP]|g[+pP])",
+        case=False, regex=True, na=False
+    )
+    m_gram_neg = text.str.contains(
+        r"(gram-|gram negative|gram[- ]?[nN]|g[-nN])", 
+        case=False, regex=True, na=False
+    )
 
     dataset["is_anti_gram_positive"] = m_gram_pos.astype(int)
     dataset["is_anti_gram_negative"] = m_gram_neg.astype(int)
-    dataset["is_antibacterial"] = (m_gram_pos | m_gram_neg).astype(int)
-    dataset["is_antifungal"] = text.str.contains(r"\bantifungal\b",     case=False, regex=True, na=False).astype(int)
-    dataset["is_antiviral"] = text.str.contains(r"\bantiviral\b", case=False, regex=True, na=False).astype(int)
-    dataset["is_antiparasitic"] = text.str.contains(r"\bantiparasitic\b",  case=False, regex=True, na=False).astype(int)
-    dataset["is_anticancer"] = text.str.contains(r"\banticancer\b",     case=False, regex=True, na=False).astype(int)
+
+    dataset["is_antifungal"] = text.str.contains(
+    r"\b(antifungal|anti-fungal|antimycotic|fungicidal|fungicide|"
+    r"anti\s+(fungal|mycotic|candida)|candidacidal|"
+    r"fluconazole|amphotericin|echinocandin|azole|polyene)\b",
+    case=False, regex=True, na=False).astype(int)
+
+    dataset["is_antiviral"] = text.str.contains(
+    r"\b(antiviral|anti-viral|anti\\s+viral|virucidal|"
+    r"anti(HIV|herpes|influenza)|anti\\s+(coronavirus|influenza|herpes))\b",
+    case=False, regex=True, na=False).astype(int)
+
+    dataset["is_antiparasitic"] = text.str.contains(
+    r"\b(antiparasitic|anti-parasitic|antiparasital|"
+    r"anti\\s+(parasitic|protozoal|helminth|worm|helminthi?cidal)|"
+    r"anthelmintic|antihelminthic|vermifuge)\b",
+    case=False, regex=True, na=False).astype(int)
+
+    dataset["is_anticancer"] = text.str.contains(
+    r"\b(anticancer|anti-cancer|anti-tumor|antitumor|"
+    r"anti-cancerous|antineoplastic|tumoricidal|anti-tumour|antitumour|"
+    r"anti\\s+tumou?r|anticarcinogenic|oncolytic)\b",
+    case=False, regex=True, na=False).astype(int)
 
 master_df = pd.concat([data_df, anticancer_df, antiparasitic_df, viral_df], ignore_index=True)
 seq_col = "Sequence"
 condition_cols = [
-    'is_antibacterial', 'is_anti_gram_positive', 'is_anti_gram_negative',
+    'is_anti_gram_positive', 'is_anti_gram_negative',
     'is_antifungal', 'is_antiviral', 'is_antiparasitic', 'is_anticancer'
 ]
 cond_present = [c for c in condition_cols if c in master_df.columns]
@@ -59,7 +83,7 @@ master_df = (
 print(f"Size before cleaning: {master_df.shape}")
 print(master_df.head())
 
-out_path = project_root / "Data" / "processed" / "master_dataset_before_cleaning.csv"
+out_path = project_root / "data" / "preprocessed" / "master_dataset_before_cleaning.csv"
 save_df(out_path, master_df)
 
 # Cleaning
@@ -74,10 +98,14 @@ for col in condition_cols:
     if col in df.columns:
         df[col] = df[col].astype(int)
 
+# Delete AMP with all condition_cols == 0
+zero_mask = df[condition_cols].sum(axis=1) == 0
+df = df[~zero_mask].copy()
+
 print(f"Size after cleaning: {df.shape}")
 print(df.head())
 
-out_path = project_root / "Data" / "processed" / "master_dataset.csv"
+out_path = project_root / "data" / "preprocessed" / "master_dataset.csv"
 save_df(out_path, df)
 
 # print(df.iloc[16])
