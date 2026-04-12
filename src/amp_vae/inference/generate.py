@@ -21,6 +21,17 @@ def generation_condition_vector(**kwargs) -> list[int]:
     return [int(kwargs.get(name, 0)) for name in GENERATION_CONDITION_COLUMNS]
 
 
+def align_condition_to_model(condition: Iterable[int | float], model) -> list[float]:
+    values = [float(x) for x in condition]
+    model_cond_dim = int(getattr(model, "cond_dim", len(values)))
+    if len(values) == model_cond_dim:
+        return values
+    raise ValueError(
+        f"Condition vector has length {len(values)}, but the loaded cVAE expects {model_cond_dim}. "
+        "Use a checkpoint trained with the current 6-label schema or supply a matching condition vector."
+    )
+
+
 def normalize_condition_name(name: str) -> str:
     name = str(name).lower().replace("+", "plus")
     return re.sub(r"[^a-z0-9]+", "_", name).strip("_")
@@ -86,7 +97,8 @@ def generate_batch(
     device=None,
 ):
     device = device or next(model.parameters()).device
-    cond_arr = np.asarray(list(condition), dtype=np.float32) * float(alpha)
+    aligned_condition = align_condition_to_model(condition, model)
+    cond_arr = np.asarray(aligned_condition, dtype=np.float32) * float(alpha)
     cond_t = torch.tensor(cond_arr, dtype=torch.float32, device=device).unsqueeze(0).repeat(n_samples, 1)
     z = torch.randn(n_samples, model.latent_dim, device=device)
     return decode_from_z_cond(model, z, cond_t, vocab=vocab, max_gen_len=vocab.max_len, temperature=temperature)
