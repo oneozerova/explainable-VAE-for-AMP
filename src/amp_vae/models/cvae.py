@@ -81,6 +81,25 @@ class CVAE(nn.Module):
         return logits, src[:, 1:], mu, logvar
 
 
+def infer_cvae_hparams_from_state_dict(state_dict: dict[str, torch.Tensor]) -> dict[str, int]:
+    latent_dim = int(state_dict["encoder.fc_mu.weight"].shape[0])
+    cond_dim = int(state_dict["decoder.init_h.weight"].shape[1] - latent_dim)
+    enc_hidden = int(state_dict["encoder.fc_mu.weight"].shape[1] - cond_dim)
+    dec_hidden = int(state_dict["decoder.init_h.weight"].shape[0])
+    embed_dim = int(state_dict["encoder.embedding.weight"].shape[1])
+    encoder_lstm_layers = len([k for k in state_dict if k.startswith("encoder.lstm.weight_ih_l")])
+    decoder_lstm_layers = len([k for k in state_dict if k.startswith("decoder.lstm.weight_ih_l")])
+    num_layers = max(encoder_lstm_layers, decoder_lstm_layers, 1)
+    return {
+        "embed_dim": embed_dim,
+        "enc_hidden": enc_hidden,
+        "dec_hidden": dec_hidden,
+        "latent_dim": latent_dim,
+        "cond_dim": cond_dim,
+        "num_layers": num_layers,
+    }
+
+
 def build_cvae(vocab: VocabBundle, embed_dim: int = 128, enc_hidden: int = 1024, dec_hidden: int = 512, latent_dim: int = 32, cond_dim: int | None = None, num_layers: int = 1, dropout: float = 0.2) -> CVAE:
     cond_dim = int(cond_dim or len(CONDITION_COLUMNS))
     return CVAE(
@@ -99,15 +118,16 @@ def build_cvae(vocab: VocabBundle, embed_dim: int = 128, enc_hidden: int = 1024,
 
 def load_cvae_checkpoint(checkpoint_path: str | Path, vocab: VocabBundle, device=None, **kwargs) -> CVAE:
     checkpoint_path = Path(checkpoint_path)
-    model = build_cvae(vocab, **kwargs)
-    if device is not None:
-        model = model.to(device)
-
     try:
         ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     except TypeError:
         ckpt = torch.load(checkpoint_path, map_location=device)
     state_dict = ckpt.get("model_state_dict", ckpt) if isinstance(ckpt, dict) else ckpt
+    inferred_hparams = infer_cvae_hparams_from_state_dict(state_dict)
+    model_kwargs = {**inferred_hparams, **kwargs}
+    model = build_cvae(vocab, **model_kwargs)
+    if device is not None:
+        model = model.to(device)
     model.load_state_dict(state_dict)
     model.eval()
     return model
