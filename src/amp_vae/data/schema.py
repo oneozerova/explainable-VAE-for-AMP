@@ -1,0 +1,26 @@
+"""Canonical schema for AMP datasets."""
+
+from __future__ import annotations
+
+from ..config import CONDITION_COLUMNS, SPECIAL_TOKENS, VALID_AMINO_ACIDS
+
+APD_ID_COLUMN = "APD ID"
+NAME_COLUMN = "Name/Class"
+SOURCE_COLUMN = "Source"
+SEQUENCE_COLUMN = "Sequence"
+LENGTH_COLUMN = "Length"
+ACTIVITY_COLUMN = "Activity"
+
+TARGET_COLUMNS = CONDITION_COLUMNS
+
+DEFAULT_DATA_COLUMNS = [
+    APD_ID_COLUMN,
+    SEQUENCE_COLUMN,
+    LENGTH_COLUMN,
+    *TARGET_COLUMNS,
+]
+
+TOKEN_COLUMNS = list(SPECIAL_TOKENS)
+
+DEFAULT_SPLIT_FRACTIONS = (0.8, 0.1, 0.1)
+

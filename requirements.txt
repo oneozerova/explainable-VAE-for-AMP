@@ -4,3 +4,10 @@ torch
 matplotlib
 scikit-learn
 tqdm
+streamlit
+requests
+beautifulsoup4
+certifi
+urllib3
+seaborn
+ipython
