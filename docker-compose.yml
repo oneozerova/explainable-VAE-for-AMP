@@ -1,0 +1,14 @@
+services:
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: amp-vae-streamlit:latest
+    ports:
+      - "8501:8501"
+    environment:
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+      STREAMLIT_SERVER_HEADLESS: "true"
+    volumes:
+      - .:/workspace
+

@@ -1,0 +1,7 @@
+condition,requested_n,kept_n,raw_generated_n,compatible_raw_n,compatibility_rate,deduplicated_keep_rate,rounds
+Antibacterial,250,250,512,256,0.5,0.48828125,2
+Antibacterial + Gram+,250,250,512,261,0.509765625,0.48828125,2
+Antibacterial + Gram-,250,250,512,372,0.7265625,0.48828125,2
+Gram+,250,250,512,268,0.5234375,0.48828125,2
+Gram-,250,250,512,335,0.654296875,0.48828125,2
+Unconditional,250,250,512,266,0.51953125,0.48828125,2

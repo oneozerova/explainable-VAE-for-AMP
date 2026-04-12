@@ -1,0 +1,17 @@
+.git
+.history
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.ipynb_checkpoints
+
+# keep the build context small; the compose volume mounts the repo at runtime
+data
+models
+docs/figures
+docs/tables
+
