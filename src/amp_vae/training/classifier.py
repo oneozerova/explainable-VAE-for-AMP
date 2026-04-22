@@ -24,7 +24,7 @@ class ClassifierTrainingConfig:
     verbose: bool = True
 
 
-def train_classifier_epoch(model, loader, optimizer, criterion, device):
+def train_classifier_epoch(model, loader, optimizer, criterion, device, max_grad_norm: float = 5.0):
     model.train()
     total_loss = 0.0
     total_n = 0
@@ -37,7 +37,7 @@ def train_classifier_epoch(model, loader, optimizer, criterion, device):
         logits = model(x, lengths)
         loss = criterion(logits, y)
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
+        nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
         optimizer.step()
 
         total_loss += float(loss.item()) * x.size(0)
@@ -72,7 +72,14 @@ def predict_classifier_loader(model, loader, criterion, device):
 
 
 def fit_external_classifier(model, train_loader, val_loader, target_cols, config: ClassifierTrainingConfig, pos_weight=None):
-    device = torch.device(config.device or ("cuda" if torch.cuda.is_available() else "cpu"))
+    if config.device:
+        device = torch.device(config.device)
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     model = model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
     if pos_weight is not None:
@@ -96,7 +103,9 @@ def fit_external_classifier(model, train_loader, val_loader, target_cols, config
         )
 
     for epoch in range(1, config.num_epochs + 1):
-        train_loss = train_classifier_epoch(model, train_loader, optimizer, criterion, device)
+        train_loss = train_classifier_epoch(
+            model, train_loader, optimizer, criterion, device, max_grad_norm=config.max_grad_norm
+        )
         val_loss, y_val, p_val, _ = predict_classifier_loader(model, val_loader, criterion, device)
         metrics = compute_multilabel_metrics(y_val, p_val, threshold=0.5, label_names=target_cols)
         macro = metrics["summary"]
@@ -139,6 +148,18 @@ def fit_external_classifier(model, train_loader, val_loader, target_cols, config
                         flush=True,
                     )
                 break
+
+    # Reload best checkpoint before tuning thresholds so tuning reflects the selected model.
+    if best_path.exists():
+        try:
+            ckpt = torch.load(best_path, map_location=device, weights_only=False)
+        except TypeError:
+            ckpt = torch.load(best_path, map_location=device)
+        state_dict = ckpt.get("model_state_dict", ckpt) if isinstance(ckpt, dict) else ckpt
+        model.load_state_dict(state_dict)
+        if config.verbose:
+            print(f"[classifier] reloaded best checkpoint before threshold tuning: {best_path}", flush=True)
+        _, y_val, p_val, _ = predict_classifier_loader(model, val_loader, criterion, device)
 
     thresholds = tune_thresholds(y_val, p_val, label_names=target_cols)
     if config.verbose:

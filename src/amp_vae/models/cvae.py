@@ -39,14 +39,31 @@ class Decoder(nn.Module):
         self.lstm = nn.LSTM(embed_dim + latent_dim + cond_dim, hidden_dim, num_layers=num_layers, batch_first=True)
         self.fc_out = nn.Linear(hidden_dim, vocab_size)
 
-    def forward(self, x, z, cond, pad_idx: int, unk_idx: int, word_dropout_rate: float = 0.0):
+    def forward(
+        self,
+        x,
+        z,
+        cond,
+        pad_idx: int,
+        unk_idx: int,
+        sos_idx: int | None = None,
+        eos_idx: int | None = None,
+        word_dropout_rate: float = 0.0,
+    ):
         batch_size, seq_len = x.shape
         z_cond = torch.cat([z, cond], dim=1)
         h0 = torch.tanh(self.init_h(z_cond)).unsqueeze(0)
         c0 = torch.tanh(self.init_c(z_cond)).unsqueeze(0)
 
         if self.training and word_dropout_rate > 0:
-            mask = (torch.rand(batch_size, seq_len, device=x.device) < word_dropout_rate) & (x != pad_idx)
+            # Bowman 2016 word dropout: never replace PAD, SOS, or EOS. SOS at pos 0
+            # is the generation start signal; replacing it breaks teacher forcing.
+            keep = x != pad_idx
+            if sos_idx is not None:
+                keep = keep & (x != sos_idx)
+            if eos_idx is not None:
+                keep = keep & (x != eos_idx)
+            mask = (torch.rand(batch_size, seq_len, device=x.device) < word_dropout_rate) & keep
             x = x.clone()
             x[mask] = unk_idx
 
@@ -59,7 +76,21 @@ class Decoder(nn.Module):
 
 
 class CVAE(nn.Module):
-    def __init__(self, vocab_size: int, embed_dim: int, enc_hidden: int, dec_hidden: int, latent_dim: int, cond_dim: int, pad_idx: int, unk_idx: int, num_layers: int = 1, dropout: float = 0.2):
+    def __init__(
+        self,
+        vocab_size: int,
+        embed_dim: int,
+        enc_hidden: int,
+        dec_hidden: int,
+        latent_dim: int,
+        cond_dim: int,
+        pad_idx: int,
+        unk_idx: int,
+        sos_idx: int | None = None,
+        eos_idx: int | None = None,
+        num_layers: int = 1,
+        dropout: float = 0.2,
+    ):
         super().__init__()
         self.encoder = Encoder(vocab_size, embed_dim, enc_hidden, latent_dim, cond_dim, pad_idx, num_layers=num_layers, dropout=dropout)
         self.decoder = Decoder(vocab_size, embed_dim, dec_hidden, latent_dim, cond_dim, pad_idx, num_layers=num_layers, dropout=dropout)
@@ -67,6 +98,8 @@ class CVAE(nn.Module):
         self.cond_dim = cond_dim
         self.pad_idx = pad_idx
         self.unk_idx = unk_idx
+        self.sos_idx = sos_idx
+        self.eos_idx = eos_idx
 
     def reparameterize(self, mu, logvar):
         if self.training:
@@ -77,7 +110,16 @@ class CVAE(nn.Module):
     def forward(self, src, lengths, cond, word_dropout_rate: float = 0.0):
         mu, logvar = self.encoder(src, lengths, cond)
         z = self.reparameterize(mu, logvar)
-        logits = self.decoder(src[:, :-1], z, cond, self.pad_idx, self.unk_idx, word_dropout_rate=word_dropout_rate)
+        logits = self.decoder(
+            src[:, :-1],
+            z,
+            cond,
+            self.pad_idx,
+            self.unk_idx,
+            sos_idx=self.sos_idx,
+            eos_idx=self.eos_idx,
+            word_dropout_rate=word_dropout_rate,
+        )
         return logits, src[:, 1:], mu, logvar
 
 
@@ -111,6 +153,8 @@ def build_cvae(vocab: VocabBundle, embed_dim: int = 128, enc_hidden: int = 1024,
         cond_dim=cond_dim,
         pad_idx=vocab.pad_idx,
         unk_idx=vocab.unk_idx,
+        sos_idx=vocab.sos_idx,
+        eos_idx=vocab.eos_idx,
         num_layers=num_layers,
         dropout=dropout,
     )
