@@ -4,7 +4,7 @@
     "token_accuracy": 0.5488149744142203,
     "n_sequences": 599
   },
-  "generation_metrics_path": "C:\\Users\\artem\\Study\\explainable-VAE-for-AMP\\docs\\tables\\generation_metrics.csv",
-  "properties_path": "C:\\Users\\artem\\Study\\explainable-VAE-for-AMP\\docs\\tables\\peptide_properties.csv",
-  "examples_path": "C:\\Users\\artem\\Study\\explainable-VAE-for-AMP\\docs\\tables\\generated_examples.csv"
+  "generation_metrics_path": "docs/tables/generation_metrics.csv",
+  "properties_path": "docs/tables/peptide_properties.csv",
+  "examples_path": "docs/tables/generated_examples.csv"
 }

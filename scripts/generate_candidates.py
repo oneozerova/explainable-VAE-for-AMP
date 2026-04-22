@@ -23,11 +23,17 @@ def parse_condition_spec(spec: str) -> dict[str, int]:
     values = {name: 0 for name in GENERATION_CONDITION_COLUMNS}
     if not spec:
         return values
+    valid_keys = set(GENERATION_CONDITION_COLUMNS)
     for item in spec.split(","):
         if not item.strip():
             continue
         key, value = item.split("=", 1)
-        values[key.strip()] = int(value.strip())
+        key = key.strip()
+        if key not in valid_keys:
+            raise ValueError(
+                f"Unknown condition key {key!r}. Valid keys: {sorted(valid_keys)}"
+            )
+        values[key] = int(value.strip())
     return values
 
 
@@ -39,6 +45,9 @@ def parse_args():
     parser.add_argument("--n-samples", type=int, default=64)
     parser.add_argument("--temperature", type=float, default=0.8)
     parser.add_argument("--alpha", type=float, default=1.0)
+    parser.add_argument("--top-k", type=int, default=None)
+    parser.add_argument("--top-p", type=float, default=None)
+    parser.add_argument("--seed", type=int, default=None, help="Seed for torch.Generator; recorded in output.")
     parser.add_argument("--output", default=str(repo_path("data", "processed", "generated_candidates.csv")))
     return parser.parse_args()
 
@@ -50,6 +59,11 @@ def main():
     model = load_cvae_checkpoint(args.checkpoint, vocab, device=device)
     cond_map = parse_condition_spec(args.condition)
     cond = generation_condition_vector(**cond_map)
+
+    generator = None
+    if args.seed is not None:
+        generator = torch.Generator(device=device).manual_seed(int(args.seed))
+
     sequences = generate_batch(
         model,
         vocab=vocab,
@@ -58,11 +72,19 @@ def main():
         temperature=args.temperature,
         alpha=args.alpha,
         device=device,
+        top_k=args.top_k,
+        top_p=args.top_p,
+        generator=generator,
     )
     frame = pd.DataFrame({"Sequence": sequences})
+    frame["seed"] = args.seed if args.seed is not None else ""
+    frame["temperature"] = args.temperature
+    frame["top_k"] = args.top_k if args.top_k is not None else ""
+    frame["top_p"] = args.top_p if args.top_p is not None else ""
+    frame["condition"] = args.condition
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(args.output, index=False)
-    print(f"Saved {len(frame)} sequences to {args.output}")
+    print(f"Saved {len(frame)} sequences to {args.output} (seed={args.seed})")
 
 
 if __name__ == "__main__":

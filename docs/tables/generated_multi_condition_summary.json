@@ -1,0 +1,126 @@
+{
+  "checkpoint": "/Users/narly/Code/Study/S26/ExAI/explainable-VAE-for-AMP/models/best_cvae.pt",
+  "checkpoint_sha256": "d1ddac7fb76ce442772f0a15ae8f504c7631d4682da6571fa99c16d7685644f4",
+  "git_sha": "61438f2fe4e87981a4b9bfee3761f2e161fd0f9a",
+  "generated_at": "2026-04-22T14:13:50+00:00",
+  "seed": 42,
+  "temperature": 0.8,
+  "top_p": 0.95,
+  "top_k": null,
+  "n_per_condition": 250,
+  "condition_columns": [
+    "is_anti_gram_positive",
+    "is_anti_gram_negative",
+    "is_antifungal",
+    "is_antiviral",
+    "is_antiparasitic",
+    "is_anticancer"
+  ],
+  "conditions": {
+    "gram_pos": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "seed": 42
+    },
+    "gram_neg": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "seed": 43
+    },
+    "antifungal": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "seed": 44
+    },
+    "antiviral": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "seed": 45
+    },
+    "antiparasitic": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "seed": 46
+    },
+    "anticancer": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "seed": 47
+    },
+    "unconditional": {
+      "requested": 250,
+      "kept": 250,
+      "generated": 500,
+      "compatibility_rate": 0.5,
+      "condition_vector": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "seed": 48
+    }
+  }
+}
