@@ -17,6 +17,8 @@ SPECIAL_TOKENS = ("<PAD>", "<SOS>", "<EOS>", "<UNK>")
 
 VALID_AMINO_ACIDS = frozenset("ACDEFGHIKLMNPQRSTVWY")
 
+DEFAULT_MAX_LEN = 64
+
 DEFAULT_CVAE_CHECKPOINT = "models/best_cvae.pt"
 DEFAULT_CLASSIFIER_CHECKPOINT = "models/best_external_amp_classifier.pt"
 DEFAULT_VOCAB_PATH = "models/vocab.pkl"
