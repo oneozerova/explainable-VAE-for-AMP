@@ -1,0 +1,8 @@
+{
+  "test_elbo": 45.789974212646484,
+  "test_recon": 37.386060078938804,
+  "test_kl": 8.403913338979086,
+  "n_test": 572,
+  "seed": 42,
+  "checkpoint": "/Users/narly/Code/Study/S26/ExAI/explainable-VAE-for-AMP/models/best_cvae.pt"
+}
