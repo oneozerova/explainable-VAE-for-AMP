@@ -1,0 +1,52 @@
+{
+  "macro_auroc": 0.7523616274904175,
+  "macro_auprc": 0.441140121072811,
+  "latent_dim": 32,
+  "n_train": 4615,
+  "n_test": 572,
+  "C": 1.0,
+  "per_label": {
+    "is_anti_gram_positive": {
+      "auroc": 0.7362603121846993,
+      "auprc": 0.8420065609403797,
+      "test_prevalence": 0.7097902097902098,
+      "n_pos_train": 3265,
+      "n_pos_test": 406
+    },
+    "is_anti_gram_negative": {
+      "auroc": 0.6505723840761464,
+      "auprc": 0.8384900764199099,
+      "test_prevalence": 0.7447552447552448,
+      "n_pos_train": 3429,
+      "n_pos_test": 426
+    },
+    "is_antifungal": {
+      "auroc": 0.6327602047512798,
+      "auprc": 0.4206067572785498,
+      "test_prevalence": 0.29895104895104896,
+      "n_pos_train": 1389,
+      "n_pos_test": 171
+    },
+    "is_antiviral": {
+      "auroc": 0.8646551041419182,
+      "auprc": 0.18749089727237475,
+      "test_prevalence": 0.04020979020979021,
+      "n_pos_train": 196,
+      "n_pos_test": 23
+    },
+    "is_antiparasitic": {
+      "auroc": 0.8445023148148149,
+      "auprc": 0.17838269437177512,
+      "test_prevalence": 0.055944055944055944,
+      "n_pos_train": 267,
+      "n_pos_test": 32
+    },
+    "is_anticancer": {
+      "auroc": 0.7854194449736458,
+      "auprc": 0.17986374015387654,
+      "test_prevalence": 0.050699300699300696,
+      "n_pos_train": 261,
+      "n_pos_test": 29
+    }
+  }
+}
