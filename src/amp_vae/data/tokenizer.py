@@ -7,7 +7,7 @@ from pathlib import Path
 import pickle
 from typing import Iterable, Sequence
 
-from ..config import SPECIAL_TOKENS
+from ..config import DEFAULT_MAX_LEN, SPECIAL_TOKENS, VALID_AMINO_ACIDS
 
 
 @dataclass(frozen=True)
@@ -69,12 +69,27 @@ def build_vocab_bundle(
     sequences: Sequence[str],
     condition_cols: Iterable[str] | None = None,
     max_len: int | None = None,
+    alphabet: Iterable[str] = VALID_AMINO_ACIDS,
 ) -> VocabBundle:
-    alphabet = sorted({aa for seq in sequences for aa in seq})
-    vocab_list = list(SPECIAL_TOKENS) + alphabet
+    """Build vocab with a fixed alphabet (default: 20 canonical AAs) + specials.
+
+    Asserts every char in every sequence belongs to ``alphabet``. Raises on
+    violation so that cleaning bugs upstream surface here instead of silently
+    producing ``<UNK>`` tokens.
+    """
+    alpha_set = frozenset(alphabet)
+    for seq in sequences:
+        s = str(seq).strip().upper()
+        bad = set(s) - alpha_set
+        if bad:
+            raise ValueError(
+                f"build_vocab_bundle: sequence contains chars outside alphabet: {sorted(bad)}"
+            )
+    sorted_alpha = sorted(alpha_set)
+    vocab_list = list(SPECIAL_TOKENS) + sorted_alpha
     char2idx = {ch: i for i, ch in enumerate(vocab_list)}
     idx2char = {i: ch for ch, i in char2idx.items()}
-    max_len = int(max_len or 64)
+    max_len = int(max_len or DEFAULT_MAX_LEN)
     return VocabBundle(
         char2idx=char2idx,
         idx2char=idx2char,
