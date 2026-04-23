@@ -6,7 +6,7 @@
 
 Antimicrobial peptides (AMPs) are short amino-acid sequences, typically 5 to 50 residues, reported to kill bacteria, fungi, viruses, parasites, or tumour cells in laboratory assays. They matter most against multi-drug-resistant strains where small molecules fail. Generative models speed up candidate design, but a black-box sampler that emits `KWKLFKKIEKVGQNVRDGIIK` and labels it "Gram-positive" does not tell a biologist why to synthesise it.
 
-This project makes the "why" explicit. We train a conditional Variational Autoencoder (cVAE) on 5759 curated AMPs from APD6 [13], then attach five XAI views and an external oracle cross-check to the trained latent space. Each view answers a concrete question about what the model learned.
+This project makes the "why" explicit. We train a conditional Variational Autoencoder (cVAE) on 5759 curated AMPs from APD6 [13] (CAMPR3 [14] is a complementary database not used here), then attach five XAI views and an external oracle cross-check to the trained latent space. Each view answers a concrete question about what the model learned.
 
 ## Task and data
 
@@ -58,13 +58,13 @@ Across 250 kept samples per condition: validity 1.00, within-condition uniquenes
 
 ### View 0: what does the 32-D latent cloud look like in 2D?
 
-We use t-SNE (`perplexity=50`) for static latent cloud visualisation. For placing generated samples on the same cloud (Figure 6) we use a parametric t-SNE [11]: a small MLP $g_\psi : \mathbb{R}^{32} \to \mathbb{R}^2$ fit by MSE against sklearn t-SNE on the training $\mu$ cloud. Interpolation paths (View 1) use PCA, which preserves the even spacing of a straight-line latent interpolation without projection artefacts.
+We use t-SNE (`perplexity=50`) for static latent cloud visualisation; UMAP [12] is an alternative manifold method but we found t-SNE gave more coherent one-vs-rest label panels at this dataset size. For placing generated samples on the same cloud (Figure 6) we use a parametric t-SNE [11]: a small MLP $g_\psi : \mathbb{R}^{32} \to \mathbb{R}^2$ fit by MSE against sklearn t-SNE on the training $\mu$ cloud. Interpolation paths (View 1) use PCA, which preserves the even spacing of a straight-line latent interpolation without projection artefacts.
 
 ![t-SNE one-vs-rest per label](figures/tsne_one_vs_rest.png)
 *Figure 2. Real-peptide $\mu$ in t-SNE, one panel per label (positive = coloured, rest = grey). Gram+ and Gram- fill the entire cloud — both are majority labels with heavy co-occurrence. Minority labels show partial concentration but no clean separation.*
 
 ![t-SNE coloured by physicochemical properties](figures/tsne_physchem.png)
-*Figure 3. Same t-SNE cloud coloured by four physicochemical properties. Sequence length shows the clearest gradient: short peptides (~10 residues) concentrate at the bottom, long ones (40–60 residues) toward the upper region. Hydrophobicity shows a moderate gradient. Net charge appears nearly uniform — over 70% of AMPs in this dataset have net charge between +2 and +8, so the dynamic range is narrow. Hydrophobic moment is diffuse across the cloud. These are 2D projections of 32D encodings; the dim-traversal experiments in View 3 are the direct evidence that z encodes these properties.*
+*Figure 3. Same t-SNE cloud coloured by four physicochemical properties. Sequence length shows the clearest gradient: short peptides (~10 residues) concentrate at the bottom, long ones (40–60 residues) toward the upper region. Hydrophobicity (Kyte-Doolittle scale [10]) shows a moderate gradient. Net charge appears nearly uniform — over 70% of AMPs in this dataset have net charge between +2 and +8, so the dynamic range is narrow. Hydrophobic moment (Eisenberg amphipathicity measure [9]) is diffuse across the cloud. These are 2D projections of 32D encodings; the dim-traversal experiments in View 3 are the direct evidence that z encodes these properties.*
 
 The cloud is a uniform blob. Labels do not form distinct regions (Figure 2). This looks like a failure but is the expected outcome of this CVAE design: the decoder receives $c$ directly at every step, so $z$ does not need to encode activity labels for reconstruction to work. KL regularisation pushes $z$ toward $\mathcal{N}(0, I)$, and with 5759 diverse sequences the encoder fills the prior smoothly instead of mapping families to isolated corners.
 
